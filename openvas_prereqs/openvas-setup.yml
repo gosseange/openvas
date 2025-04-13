@@ -1,0 +1,6 @@
+# openvas-setup.yml
+- hosts: all
+  become: yes
+  roles:
+    - openvas_prereqs
+

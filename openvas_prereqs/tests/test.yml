@@ -1,0 +1,7 @@
+---
+- name: Test OpenVAS Role
+  hosts: localhost
+  become: yes
+  roles:
+    - role: openvas_prereqs
+

@@ -1,0 +1,5 @@
+# defaults/main.yml
+
+gvm_user: gvm
+gvm_group: gvm
+

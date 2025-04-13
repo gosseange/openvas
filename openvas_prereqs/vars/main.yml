@@ -1,0 +1,11 @@
+ansible_user: ubuntu
+
+gvm_libs_version: "22.18.0"
+gvmd_version: "25.1.1"
+pg_gvm_version: "22.6.7"
+gsa_version: "24.3.0"
+gsad_version: "24.2.2"
+openvas_smb_version: "22.5.3"
+openvas_scanner_version: "23.15.3"
+ospd_openvas_version: "22.7.1"
+openvas_daemon_version: "23.15.3"
