@@ -1,0 +1,5 @@
+---
+gvm_libs_version: "22.18.0"
+source_dir: "/opt/source"
+build_dir: "/opt/build"
+install_dir: "/opt/install"
