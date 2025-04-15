@@ -1,0 +1,6 @@
+---
+- name: Installation de pg-gvm
+  hosts: localhost
+  become: yes
+  roles:
+    - 103-pg-gvm

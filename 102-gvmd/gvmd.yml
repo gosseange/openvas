@@ -1,0 +1,5 @@
+- name: Installation de gvmd
+  hosts: all
+  become: yes
+  roles:
+    - 102-gvmd

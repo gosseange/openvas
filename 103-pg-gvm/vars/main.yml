@@ -1,2 +1,5 @@
----
-# vars file for 3-pg-gvm
+pg_gvm_version: "22.6.7"
+source_dir: "/opt/source"
+build_dir: "/opt/build"
+install_dir: "/opt/install"
+

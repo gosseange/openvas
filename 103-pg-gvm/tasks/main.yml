@@ -1,2 +1,85 @@
 ---
-# tasks file for 3-pg-gvm
+
+- name: Charger les variables d'environnement depuis /etc/profile.d/openvas_env.sh
+  shell: |
+    bash -c "source /etc/profile.d/openvas_env.sh && echo PG_GVM_VERSION=$GVM_LIBS_VERSION;SOURCE_DIR=$SOURCE_DIR;BUILD_DIR=$BUILD_DIR;INSTALL_DIR=$INSTALL_DIR;INSTALL_PREFIX=$INSTALL_PREFIX"
+  register: env_vars_output
+  changed_when: false
+
+- name: Vérifier que les variables ont été chargées
+  debug:
+    msg: "{{ env_vars_output.stdout }}"
+
+- name: Définir les variables d'environnement comme facts
+  set_fact:
+    build_dir: "{{ env_vars_output.stdout | regex_search('BUILD_DIR=([^;]+)', '\\1')  }}"
+    install_dir: "{{ env_vars_output.stdout | regex_search('INSTALL_DIR=([^;]+)', '\\1')  }}"
+    install_prefix: "{{ env_vars_output.stdout | regex_search('INSTALL_PREFIX=([^;]+)', '\\1')  }}"
+
+- name: Installer les dépendances pour pg-gvm
+  apt:
+    name:
+
+      - libglib2.0-dev
+      - libical-dev
+      - postgresql-server-dev-all
+    state: present
+    update_cache: yes
+  become: yes
+
+- name: Créer le dossier source s'il n'existe pas
+  file:
+    path: "{{ source_dir }}"
+    state: directory
+
+- name: Créer le dossier build pour pg-gvm
+  file:
+    path: "{{ build_dir }}/pg-gvm"
+    state: directory
+
+- name: Télécharger l’archive pg-gvm
+  get_url:
+    url: "https://github.com/greenbone/pg-gvm/archive/refs/tags/v{{ pg_gvm_version }}.tar.gz"
+    dest: "{{ source_dir }}/gvm-libs-{{ pg_gvm_version }}.tar.gz"
+    mode: "0644"
+
+- name: Extraire les sources de pg-gvm
+  unarchive:
+    src: "{{ source_dir }}/pg-gvm-{{ pg_gvm_version }}.tar.gz"
+    dest: "{{ source_dir }}"
+    remote_src: yes
+    creates: "{{ source_dir }}/pg-gvm-{{ pg_gvm_version }}"
+
+- name: Configurer pg_gvm avec CMake
+  command: >
+    cmake {{ source_dir }}/pg-gvm-{{ pg_gvm_version }}
+    -DCMAKE_INSTALL_PREFIX={{ install_prefix }}
+    -DCMAKE_BUILD_TYPE=Release
+    -DBUILD_SHARED_LIBS=ON #Assure que les bibliotheques partagées sont activées pour générer les fichiers .pc
+  args:
+    chdir: "{{ build_dir }}/pg-gvm"
+  environment:
+    PKG_CONFIG_PATH: "{{install_prefix | join('') }}/lib/pkgconfig"
+
+- name: Vérifier la valeur de install_prefix
+  debug:
+    msg: "Valeur de install_prefix : {{ install_prefix }}"
+
+- name: Compiler pg-gvm
+  command: make -j"{{ ansible_processor_cores | default(2) }}"
+  args:
+    chdir: "{{ build_dir }}/pg-gvm"
+
+- name: Installer pg-gvm
+  command: make install
+  args:
+    chdir: "{{ build_dir }}/pg-gvm"
+
+- name: Vérifier si le fichier libgvm_base.pc a été installé
+  find:
+    paths: "{{ install_prefix | string }}/lib/pkgconfig"
+    patterns: "libgvm_base.pc"
+  register: pc_check
+
+- name: Afficher le résultat
+  debug:

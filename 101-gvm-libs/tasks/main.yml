@@ -14,7 +14,7 @@
   set_fact:
     build_dir: "{{ env_vars_output.stdout | regex_search('BUILD_DIR=([^;]+)', '\\1') | string }}"
     install_dir: "{{ env_vars_output.stdout | regex_search('INSTALL_DIR=([^;]+)', '\\1') | string }}"
-    install_prefix: "{{ env_vars_output.stdout | regex_search('INSTALL_PREFIX=([^;]+)', '\\1') | string }}"
+    install_prefix: "{{ env_vars_output.stdout | regex_search('INSTALL_PREFIX=([^;]+)', '\\1') | first }}"
 
 - name: Installer les dépendances pour gvm-libs
   apt:
@@ -36,6 +36,7 @@
       - libradcli-dev
       - doxygen
       - clang-format
+      - pkg-config
     state: present
     update_cache: yes
   become: yes
@@ -68,8 +69,15 @@
     cmake {{ source_dir }}/gvm-libs-{{ gvm_libs_version }}
     -DCMAKE_INSTALL_PREFIX={{ install_prefix }}
     -DCMAKE_BUILD_TYPE=Release
+    -DBUILD_SHARED_LIBS=ON #Assure que les bibliotheques partagées sont activées pour générer les fichiers .pc
   args:
     chdir: "{{ build_dir }}/gvm-libs"
+  environment:
+    PKG_CONFIG_PATH: "{{install_prefix | join('') }}/lib/pkgconfig"
+
+- name: Vérifier la valeur de install_prefix
+  debug:
+    msg: "Valeur de install_prefix : {{ install_prefix }}"
 
 - name: Compiler gvm-libs
   command: make -j"{{ ansible_processor_cores | default(2) }}"
@@ -80,3 +88,13 @@
   command: make install
   args:
     chdir: "{{ build_dir }}/gvm-libs"
+
+- name: Vérifier si le fichier libgvm_base.pc a été installé
+  find:
+    paths: "{{ install_prefix | string }}/lib/pkgconfig"
+    patterns: "libgvm_base.pc"
+  register: pc_check
+
+- name: Afficher le résultat
+  debug:
+    msg: "Fichier libgvm_base.pc trouvé : {{ pc_check.files | length > 0 }}"
