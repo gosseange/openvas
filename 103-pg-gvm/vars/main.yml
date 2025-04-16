@@ -1,5 +1,2 @@
-pg_gvm_version: "22.6.7"
-source_dir: "/opt/source"
-build_dir: "/opt/build"
-install_dir: "/opt/install"
-
+---
+# vars file for 103-pg-gvm

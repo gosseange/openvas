@@ -1,0 +1,60 @@
+---
+# roles/openvas/tasks/main.yml
+
+- name: (1) Mettre à jour les paquets APT
+  apt:
+    update_cache: yes
+    upgrade: yes
+  become: yes
+
+- name: Installer les paquets de prérequis
+  apt:
+    name:
+      - wget
+      - apt-transport-https
+      - gnupg2
+      - software-properties-common
+      - sqlite3
+    state: present
+  become: yes
+
+- name: Ajouter manuellement la source PPA (Ubuntu focal)
+  apt_repository:
+    repo: "deb http://ppa.launchpad.net/mrazavi/openvas/ubuntu focal main"
+    state: present
+    filename: "openvas-mrazavi"
+    update_cache: yes
+  become: yes
+
+- name: Autoriser les dépôts non sécurisés temporairement (à tes risques et périls)
+  copy:
+    dest: /etc/apt/apt.conf.d/99insecure
+    content: 'Acquire::AllowInsecureRepositories "true";'
+  become: yes
+
+- name: Installer OpenVAS
+  apt:
+    name: openvas
+    state: present
+  become: yes
+
+- name: (3) Synchroniser les données NVT
+  command: openvas-nvt-sync
+  become: yes
+
+- name: Synchroniser les données SCAP
+  command: openvas-scapdata-sync
+  become: yes
+
+- name: Synchroniser les données CERT
+  command: openvas-certdata-sync
+  become: yes
+
+- name: Reconstruire la base OpenVASMD
+  command: openvasmd --rebuild
+  become: yes
+
+- name: Démarrer le démon openvassd
+  command: openvassd
+  become: yes
+

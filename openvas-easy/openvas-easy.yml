@@ -1,0 +1,6 @@
+# playbook.yml
+- hosts: openvas
+  become: yes
+  roles:
+    - openvas-easy
+

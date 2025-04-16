@@ -2,7 +2,7 @@
 
 - name: Charger les variables d'environnement depuis /etc/profile.d/openvas_env.sh
   shell: |
-    bash -c 'source /etc/profile.d/openvas_env.sh && echo "GVM_LIBS_VERSION=$GVM_LIBS_VERSION;SOURCE_DIR=$SOURCE_DIR;BUILD_DIR=$BUILD_DIR;INSTALL_DIR=$INSTALL_DIR;INSTALL_PREFIX=$INSTALL_PREFIX"'
+    bash -c 'source /etc/profile.d/openvas_env.sh && echo "GVMD_VERSION=$GVM_LIBS_VERSION;SOURCE_DIR=$SOURCE_DIR;BUILD_DIR=$BUILD_DIR;INSTALL_DIR=$INSTALL_DIR;INSTALL_PREFIX=$INSTALL_PREFIX"'
   register: env_vars_output
   changed_when: false
 
@@ -16,6 +16,16 @@
     install_dir: "{{ env_vars_output.stdout | regex_search('INSTALL_DIR=([^;]+)', '\\1') | first }}"
     install_prefix: "{{ env_vars_output.stdout | regex_search('INSTALL_PREFIX=([^;]+)', '\\1') | first }}"
 
+
+- name: Attendre que le verrou APT soit libéré
+  shell: |
+    while fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1; do
+      echo "En attente de la libération du verrou APT..."
+      sleep 5
+    done
+  changed_when: false
+
+      
 - name: Installer les dépendances pour gvmd
   apt:
     name:
@@ -73,6 +83,15 @@
     dest: /opt/source/gvmd-25.1.1.tar.gz.asc
     mode: '0644'
   when: not lookup('ansible.builtin.file', '/opt/source/gvmd-25.1.1.tar.gz.asc', errors='ignore')
+
+
+- name: Importer la clé GPG de Greenbone
+  ansible.builtin.command: >
+    gpg --keyserver keyserver.ubuntu.com
+        --recv-keys 8AE4BE429B60A59B311C2E739823FAA60ED1E580
+  become: true
+  environment:
+    GNUPGHOME: /root/.gnupg
 
 
 - name: Vérifier la signature de l’archive

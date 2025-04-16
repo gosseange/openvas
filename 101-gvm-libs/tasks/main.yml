@@ -1,5 +1,13 @@
 ---
 
+- name: Copier le fichier d’environnement OpenVAS dans /etc/profile.d
+  ansible.builtin.copy:
+    src: openvas_env.sh
+    dest: /etc/profile.d/openvas_env.sh
+    owner: root
+    group: root
+    mode: '0644'
+
 - name: Charger les variables d'environnement depuis /etc/profile.d/openvas_env.sh
   shell: |
     bash -c 'source /etc/profile.d/openvas_env.sh && echo "GVM_LIBS_VERSION=$GVM_LIBS_VERSION;SOURCE_DIR=$SOURCE_DIR;BUILD_DIR=$BUILD_DIR;INSTALL_DIR=$INSTALL_DIR;INSTALL_PREFIX=$INSTALL_PREFIX"'
@@ -20,6 +28,9 @@
   apt:
     name:
       - libcjson-dev
+      - cmake
+      - build-essential
+      - pkg-config
       - libcurl4-gnutls-dev
       - libgcrypt-dev
       - libglib2.0-dev

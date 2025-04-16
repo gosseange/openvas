@@ -2,4 +2,4 @@
 - hosts: localhost
   remote_user: root
   roles:
-    - 103-pg-gvm
+    - openvas-easy
