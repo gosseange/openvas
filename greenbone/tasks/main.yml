@@ -1,0 +1,10 @@
+# /etc/ansible/roles/greenbone/tasks/main.yml
+
+- name: "Installation des prérequis Greenbone"
+  include_role:
+    name: greenbone_prereqs
+
+- name: "Installation de gvm_libs"
+  import_role:
+    name: gvm_libs
+

@@ -1,0 +1,3 @@
+# Clé de signature
+greenbone_signing_key_url: https://www.greenbone.net/GBCommunitySigningKey.asc
+greenbone_gpg_trustline: "8AE4BE429B60A59B311C2E739823FAA60ED1E580:6:"

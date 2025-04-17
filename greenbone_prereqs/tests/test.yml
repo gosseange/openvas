@@ -1,0 +1,6 @@
+---
+- name: "Test Greenbone Prerequisites Role"
+  hosts: localhost
+  become: true
+  roles:
+    - greenbone_prereqs

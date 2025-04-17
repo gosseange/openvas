@@ -1,0 +1,27 @@
+# Dépendances nécessaires
+gvm_libs_required_packages:
+  - libcjson-dev
+  - libcurl4-gnutls-dev
+  - libgcrypt-dev
+  - libglib2.0-dev
+  - libgnutls28-dev
+  - libgpgme-dev
+  - libhiredis-dev
+  - libnet1-dev
+  - libpaho-mqtt-dev
+  - libpcap-dev
+  - libssh-dev
+  - libxml2-dev
+  - uuid-dev
+
+# Dépendances optionnelles
+gvm_libs_optional_packages:
+  - libldap2-dev
+  - libradcli-dev
+
+gvm_libs_tarball: "gvm-libs-{{ gvm_libs_version }}.tar.gz"
+gvm_libs_tarball_url: "{{ gvm_libs_url }}"
+gvm_libs_signature_url: "{{ gvm_libs_sig_url }}"
+gvm_libs_src_dir: "{{ source_dir }}/gvm-libs-{{ gvm_libs_version }}"
+gvm_libs_build_dir: "{{ build_dir }}/gvm-libs"
+gvm_libs_install_staging: "{{ install_dir }}/gvm-libs"

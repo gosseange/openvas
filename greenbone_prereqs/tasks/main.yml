@@ -1,0 +1,68 @@
+---
+
+- name: "[GVM] Ensure group exists"
+  ansible.builtin.group:
+    name: "{{ gvm_group }}"
+    state: present
+  tags: ["prereqs", "user"]
+
+- name: "[GVM] Create system user"
+  ansible.builtin.user:
+    name: "{{ gvm_user }}"
+    group: "{{ gvm_group }}"
+    shell: "{{ gvm_shell }}"
+    groups: "{{ gvm_additional_groups }}"
+    append: true
+    system: true
+    create_home: false
+    state: present
+  tags: ["prereqs", "user"]
+
+- name: "[GVM] Add current user to gvm group"
+  ansible.builtin.user:
+    name: "{{ ansible_user_id }}"
+    groups: "{{ gvm_group }}"
+    append: true
+  tags: ["prereqs", "user"]
+
+- name: "[GVM] Create source/build/install directories"
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - "{{ source_dir }}"
+    - "{{ build_dir }}"
+    - "{{ install_dir }}"
+  tags: ["prereqs", "directories"]
+
+- name: "[GVM] Install common build dependencies"
+  ansible.builtin.apt:
+    name: "{{ build_dependencies }}"
+    state: present
+    update_cache: true
+    install_recommends: false
+  tags: ["prereqs", "packages"]
+
+- name: "[GVM] Download Greenbone GPG key"
+  ansible.builtin.get_url:
+    url: "{{ greenbone_signing_key_url }}"
+    dest: "{{ greenbone_signing_key_file }}"
+    mode: '0644'
+  tags: ["prereqs", "gpg"]
+
+- name: "[GVM] Import Greenbone GPG key"
+  ansible.builtin.command: "gpg --import {{ greenbone_signing_key_file }}"
+  args:
+    creates: "~/.gnupg/pubring.kbx"
+  register: gpg_import
+  changed_when: "'imported' in gpg_import.stdout or 'not changed' not in gpg_import.stdout"
+  tags: ["prereqs", "gpg"]
+
+- name: "[GVM] Set GPG ownertrust for Greenbone key"
+  ansible.builtin.shell: |
+    echo "{{ greenbone_gpg_trustline }}" | gpg --import-ownertrust
+  args:
+    executable: /bin/bash
+  changed_when: false
+  tags: ["prereqs", "gpg"]

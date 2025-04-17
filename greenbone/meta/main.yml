@@ -1,0 +1,42 @@
+galaxy_info:
+  role_name: greenbone_install
+  author: ConseilNumerik
+  description: "Rôle principal pour l'installation complète de Greenbone/OpenVAS depuis les sources"
+  license: MIT
+  min_ansible_version: 2.9
+
+  platforms:
+    - name: Ubuntu
+      versions:
+        - focal
+        - jammy
+
+  galaxy_tags:
+    - security
+    - gvm
+    - openvas
+    - greenbone
+    - vulnerability
+    - orchestration
+
+dependencies:
+  - role: greenbone_prereqs
+  - role: gvm_libs
+  - role: gvmd
+    #- role: pg_gvm
+    #- role: gsa
+    #- role: gsad
+    #- role: openvas_scanner
+    #- role: openvasd_server_config
+    #- role: ospd_openvas
+    #- role: openvasd
+    #- role: greenbone_feed_sync
+    #- role: gvm_tools
+    #- role: gvm_user_permissions
+    #- role: feed_validation
+    #- role: postgresql_setup
+    #- role: systemd_services_setup
+    #- role: feed_sync
+    #- role: start_greebone_community_services
+    #- role: url_test
+

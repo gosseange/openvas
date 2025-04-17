@@ -1,0 +1,8 @@
+# /etc/ansible/greenbone_prereqs.yml
+
+- name: Installation de Greenbone 
+  hosts: all
+  become: yes
+
+  roles:
+    - role: greenbone

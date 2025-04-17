@@ -1,0 +1,12 @@
+---
+galaxy_info:
+  role_name: greenbone_prereqs
+  author: "ConseilNumerik"
+  description: "Installe les prérequis système pour Greenbone/OpenVAS"
+  license: MIT
+  min_ansible_version: 2.9
+  platforms:
+    - name: Ubuntu
+      versions:
+        - 22.04
+dependencies: []

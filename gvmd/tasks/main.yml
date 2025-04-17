@@ -1,0 +1,100 @@
+---
+
+- name: "[gvmd] Installer les dépendances requises"
+  apt:
+    name: "{{ gvmd_required_packages }}"
+    state: present
+    update_cache: yes
+  tags: ['gvmd', 'deps']
+
+- name: "[gvmd] Installer les dépendances optionnelles"
+  apt:
+    name: "{{ gvmd_optional_packages }}"
+    state: present
+  tags: ['gvmd', 'deps']
+
+- name: "[gvmd] Télécharger l’archive"
+  get_url:
+    url: "{{ gvmd_tarball_url }}"
+    dest: "{{ source_dir }}/{{ gvmd_tarball }}"
+    mode: '0644'
+  tags: ['gvmd', 'download']
+
+- name: "[gvmdd] Télécharger la signature"
+  get_url:
+    url: "{{ gvmd_signature_url }}"
+    dest: "{{ source_dir }}/{{ gvmd_tarball }}.asc"
+    mode: '0644'
+  tags: ['gvmd', 'download']
+
+- name: "[gvmd] Vérifier la signature"
+  ansible.builtin.shell: |
+    gpg --verify gvmd-{{ gvmd_version }}.tar.gz.sig gvmd-{{ gvmd_version }}.tar.gz
+  args:
+    chdir: "{{ download_dir }}"
+  register: gvmd_gpg_check
+  failed_when: gvmd_gpg_check.rc != 0
+  changed_when: false
+
+- name: "[gvmd] Décompresser les sources"
+  unarchive:
+    src: "{{ source_dir }}/{{ gvmd_tarball }}"
+    dest: "{{ source_dir }}"
+    remote_src: yes
+    creates: "{{ gvmd_src_dir }}"
+  tags: ['gvmd', 'extract']
+
+- name: "[gvmd] Créer le répertoire de build"
+  file:
+    path: "{{ gvmd_build_dir }}"
+    state: directory
+  tags: ['gvmd', 'build']
+
+- name: "[gvmd] Générer les fichiers avec cmake"
+  command: >
+    cmake -S {{ gvmd_src_dir }}
+           -B {{ gvmd_build_dir }}
+           -DCMAKE_INSTALL_PREFIX={{ install_prefix }}
+           -DCMAKE_BUILD_TYPE=Release
+           -DSYSCONFDIR=/etc
+           -DLOCALSTATEDIR=/var
+           -DLOGROTATE_DIR=/etc/logrotate.d
+           -DGVM_DATA_DIR={{ gvmd_data_dir }}
+           -DGVM_LOG_DIR={{ gvmd_log_dir }}
+           -DGVM_RUN_DIR={{ vgmd_run_dir }}
+           -DOPENVAS_DEFAULT_SOCKET={{ openvasd_default_socket }}
+           -DGVM_FEED_LOCK_PATH={{ gvmd_feed_lock_path}}
+  args:
+    creates: "{{ gvmd_build_dir }}/Makefile"
+  tags: ['gvmd', 'build']
+
+- name: "[gvmd] Compiler gvmd"
+  ansible.builtin.command:
+    cmd: cmake --build {{ build_dir }}/gvmd -j1
+  args:
+    chdir: "{{ build_dir }}/gvmd"
+  environment:
+    LD_LIBRARY_PATH: "/usr/local/lib"
+  tags: ['gvmd', 'build']
+
+- name: "[gvm] Mettre à jour les liens dynamiques"
+  ansible.builtin.command: ldconfig
+
+- name: "[gvmd] Créer le dossier d’installation temporaire"
+  file:
+    path: "{{ gvmd_install_dir }}"
+    state: directory
+  tags: ['gvmd', 'install']
+
+- name: "[gvmd] Installer dans le staging"
+  command: make DESTDIR={{ gvmd_install_dir }} install
+  args:
+    chdir: "{{ gvmd_build_dir }}"
+  tags: ['gvmd', 'install']
+
+- name: "[gvmd] Copier dans le système"
+  copy:
+    src: "{{ gvmd_install_dir }}/"
+    dest: "/"
+    remote_src: yes
+  tags: ['gvmd', 'install']

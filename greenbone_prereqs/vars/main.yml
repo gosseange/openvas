@@ -1,0 +1,13 @@
+# Variables internes uniquement pour ce rôle
+
+build_dependencies:
+  - build-essential
+  - curl
+  - cmake
+  - pkg-config
+  - python3
+  - python3-pip
+  - gnupg
+
+greenbone_signing_key_file: /tmp/GBCommunitySigningKey.asc
+

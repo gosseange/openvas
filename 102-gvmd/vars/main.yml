@@ -1,6 +1,0 @@
----
-gvmd_version: "25.1.1"
-source_dir: "/opt/source"
-build_dir: "/opt/build"
-install_dir: "/opt/install"
-install_prefix: "/usr/local"
