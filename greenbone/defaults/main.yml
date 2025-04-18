@@ -3,7 +3,7 @@ install_prefix: /usr/local
 source_dir: "{{ ansible_env.HOME }}/source"
 build_dir: "{{ ansible_env.HOME }}/build"
 install_dir: "{{ ansible_env.HOME }}/install"
-
+download_dir: /tmp/
 # User and group
 gvm_user: gvm
 gvm_group: gvm
@@ -26,7 +26,7 @@ gvm_libs_url: "https://github.com/greenbone/gvm-libs/archive/refs/tags/v{{ gvm_l
 gvmd_url: "https://github.com/greenbone/gvmd/archive/refs/tags/v{{ gvmd_version }}.tar.gz"
 pg_gvm_url: "https://github.com/greenbone/pg-gvm/archive/refs/tags/v{{ pg_gvm_version }}.tar.gz"
 gsa_url: "https://github.com/greenbone/gsa/releases/download/v{{ gsa_version }}/gsa-dist-{{ gsa_version }}.tar.gz"
-gsad_url: "https://github.com/greenbone/gsad/archive/refs/tags/v{{ gsad_version }}.tar.gz"
+gsad_url: "https://github.com/greenbone/gsad/archive/refs/tags/v{{ gsad_version }}.tar.gz"  
 openvas_smb_url: "https://github.com/greenbone/openvas-smb/archive/refs/tags/v{{ openvas_smb_version }}.tar.gz" 
 openvas_scanner_url: "https://github.com/greenbone/openvas-scanner/archive/refs/tags/v{{ openvas_scanner_version }}.tar.gz"
 ospd_url: "https://github.com/greenbone/ospd-openvas/archive/refs/tags/v{{ ospd_version }}.tar.gz"

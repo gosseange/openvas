@@ -1,0 +1,99 @@
+---
+
+
+- name: "[openvas-smb] Mettre à jour la liste des paquets"
+  apt:
+    update_cache: yes
+  tags: openvas-smb
+
+- name: "[openvas-smb] Corriger les paquets cassés"
+  command: apt --fix-broken install -y
+  register: fix_broken_result
+  changed_when: "'0 upgraded' not in fix_broken_result.stdout"
+  failed_when: fix_broken_result.rc != 0 and '0 upgraded' not in fix_broken_result.stdout
+  tags: openvas-smb
+
+- name: "[openvas-smb] Installer les dépendances requises"
+  apt:
+    name: "{{ openvas_smb_required_packages }}"
+    state: present
+    update_cache: yes
+  tags: ['openvas-smb', 'deps']
+
+- name: "[openvas-smb] Télécharger l’archive"
+  get_url:
+    url: "{{ openvas_smb_tarball_url }}"
+    dest: "{{ source_dir }}/{{ openvas_smb_tarball }}"
+    mode: '0644'
+  tags: ['openvas-smb', 'download']
+
+- name: "[openvas-smb] Télécharger la signature"
+  get_url:
+    url: "{{ openvas_smb_signature_url }}"
+    dest: "{{ source_dir }}/{{ openvas_smb_tarball }}.asc"
+    mode: '0644'
+  tags: ['openvas-smb', 'download']
+
+- name: "[openvas-smb] Vérifier la signature"
+  ansible.builtin.shell: |
+    gpg --verify openvas-smb-{{ openvas_smb_version }}.tar.gz.asc openvas-smb-{{ openvas_smb_version }}.tar.gz
+  args:
+    chdir: "{{ source_dir }}"
+  register: openvas_smb_gpg_check
+  failed_when: openvas_smb_gpg_check.rc != 0
+  changed_when: false
+
+- name: "[openvas-smb] Décompresser les sources"
+  unarchive:
+    src: "{{ source_dir }}/{{ openvas_smb_tarball }}"
+    dest: "{{ source_dir }}"
+    remote_src: yes
+    creates: "{{ openvas_smb_src_dir }}"
+  tags: ['openvas-smb', 'extract']
+
+- name: "[openvas-smb] Créer le répertoire de build"
+  file:
+    path: "{{ openvas_smb_build_dir }}"
+    state: directory
+  tags: ['openvas-smb', 'build']
+
+- name: "[openvas-smb] Générer les fichiers avec cmake"
+  command: >
+    cmake -S {{ openvas_smb_src_dir }}
+           -B {{ openvas_smb_build_dir }}
+           -DCMAKE_INSTALL_PREFIX={{ install_prefix }}
+           -DCMAKE_BUILD_TYPE=Release
+  args:
+    creates: "{{ openvas_smb_build_dir }}/Makefile"
+  tags: ['openvas-smb', 'build']
+
+- name: "[openvas-smb] Compiler openvas-smb"
+  ansible.builtin.command:
+    cmd: cmake --build {{ build_dir }}/openvas-smb -j1
+  args:
+    chdir: "{{ build_dir }}/openvas-smb"
+  environment:
+    LD_LIBRARY_PATH: "/usr/local/lib"
+  tags: ['openvas-smb', 'build']
+
+- name: "[gvm] Mettre à jour les liens dynamiques"
+  ansible.builtin.command: ldconfig
+
+- name: "[openvas-smb] Créer le dossier d’installation temporaire"
+  file:
+    path: "{{ openvas_smb_install_dir }}"
+    state: directory
+  tags: ['openvas-smb', 'install']
+
+- name: "[openvas-smb] Installer dans le staging"
+  command: make DESTDIR={{ openvas_smb_install_dir }} install
+  args:
+    chdir: "{{ openvas_smb_build_dir }}"
+  tags: ['openvas-smb', 'install']
+
+- name: "[openvas-smb] Copier dans le système"
+  copy:
+    src: "{{ openvas_smb_install_dir }}/"
+    dest: "/"
+    remote_src: yes
+  tags: ['openvas-smb', 'install']

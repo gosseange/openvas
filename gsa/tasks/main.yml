@@ -1,0 +1,50 @@
+---
+
+- name: "[gsa] Télécharger l’archive"
+  get_url:
+    url: "{{ gsa_tarball_url }}"
+    dest: "{{ source_dir }}/{{ gsa_tarball }}"
+    mode: '0644'
+  tags: ['gsa', 'download']
+
+- name: "[gsa] Télécharger la signature"
+  get_url:
+    url: "{{ gsa_signature_url }}"
+    dest: "{{ source_dir }}/{{ gsa_tarball }}.asc"
+    mode: '0644'
+  tags: ['gsa', 'download']
+
+- name: "[gsa] Vérifier la signature"
+  ansible.builtin.shell: |
+    gpg --verify gsa-dist-{{ gsa_version }}.tar.gz.asc gsa-dist-{{ gsa_version }}.tar.gz 
+  args:
+    chdir: "{{ source_dir }}"
+  register: gsa_gpg_check
+  failed_when: gsa_gpg_check.rc != 0
+  changed_when: false
+
+- name: "[gsa] Créer le dossier destination de la décompression"
+  file:
+    path: "{{ gsa_src_dir }}"
+    state: directory
+  tags: ['gsa', 'install']
+
+- name: "[gsa] Décompresser les sources"
+  unarchive:
+    src: "{{ source_dir }}/{{ gsa_tarball }}"
+    dest: "{{ gsa_src_dir }}"
+    remote_src: yes
+  tags: ['gsa', 'extract']
+
+- name: "[gsa] Créer le dossier gsa web"
+  file:
+    path: "{{ gsa_web_dir }}"
+    state: directory
+  tags: ['gsa', 'install']
+
+- name: "[gsa] Copier dans le dossier web"
+  copy:
+    src: "{{ gsa_src_dir }}/"
+    dest: "{{ gsa_web_dir }}"
+    remote_src: yes
+  tags: ['gsa', 'install']

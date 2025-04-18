@@ -1,56 +1,57 @@
 ---
 
-- name: "[gvm_libs] Installer les dépendances requises"
+- name: "[gvm-libs] Installer les dépendances requises"
   apt:
     name: "{{ gvm_libs_required_packages }}"
     state: present
     update_cache: yes
-  tags: ['gvm_libs', 'deps']
+  tags: ['gvm-libs', 'deps']
 
-- name: "[gvm_libs] Installer les dépendances optionnelles"
+- name: "[gvm-libs] Installer les dépendances optionnelles"
   apt:
     name: "{{ gvm_libs_optional_packages }}"
     state: present
-  tags: ['gvm_libs', 'deps']
+  tags: ['gvm-libs', 'deps']
 
-- name: "[gvm_libs] Télécharger l’archive gvm-libs"
+- name: "[gvm-libs] Télécharger l’archive gvm-libs"
   get_url:
     url: "{{ gvm_libs_tarball_url }}"
     dest: "{{ source_dir }}/{{ gvm_libs_tarball }}"
     mode: '0644'
-  tags: ['gvm_libs', 'download']
+  tags: ['gvm-libs', 'download']
 
-- name: "[gvm_libs] Télécharger la signature"
+- name: "[gvm-libs] Télécharger la signature"
   get_url:
     url: "{{ gvm_libs_signature_url }}"
     dest: "{{ source_dir }}/{{ gvm_libs_tarball }}.asc"
     mode: '0644'
-  tags: ['gvm_libs', 'download']
+  tags: ['gvm-libs', 'download']
 
-- name: "[gvm_libs] Vérifier la signature"
+- name: "[gvm-libs] Vérifier la signature"
   ansible.builtin.shell: |
-    gpg --verify gvm-libs-{{ gvm_libs_version }}.tar.gz.sig gvm-libs-{{ gvm_libs_version }}.tar.gz
+    gpg --verify gvm-libs-{{ gvm_libs_version }}.tar.gz.asc gvm-libs-{{ gvm_libs_version }}.tar.gz
   args:
-    chdir: "{{ download_dir }}"
+    chdir: "{{ source_dir }}"
   register: gvm_libs_gpg_check
   failed_when: gvm_libs_gpg_check.rc != 0
   changed_when: false
+  tags: gvm-libs
 
-- name: "[gvm_libs] Décompresser les sources"
+- name: "[gvm-libs] Décompresser les sources"
   unarchive:
     src: "{{ source_dir }}/{{ gvm_libs_tarball }}"
     dest: "{{ source_dir }}"
     remote_src: yes
     creates: "{{ gvm_libs_src_dir }}"
-  tags: ['gvm_libs', 'extract']
+  tags: ['gvm-libs', 'extract']
 
-- name: "[gvm_libs] Créer le répertoire de build"
+- name: "[gvm-libs] Créer le répertoire de build"
   file:
     path: "{{ gvm_libs_build_dir }}"
     state: directory
-  tags: ['gvm_libs', 'build']
+  tags: ['gvm-libs', 'build']
 
-- name: "[gvm_libs] Générer les fichiers avec cmake"
+- name: "[gvm-libs] Générer les fichiers avec cmake"
   command: >
     cmake -S {{ gvm_libs_src_dir }}
            -B {{ gvm_libs_build_dir }}
@@ -60,32 +61,25 @@
            -DLOCALSTATEDIR=/var
   args:
     creates: "{{ gvm_libs_build_dir }}/Makefile"
-  tags: ['gvm_libs', 'build']
+  tags: ['gvm-libs', 'build']
 
-- name: "[gvm_libs] Compiler gvm-libs"
+- name: "[gvm-libs] Compiler gvm-libs"
   command: cmake --build {{ gvm_libs_build_dir }} -j"{{ ansible_processor_cores | default(2) }}"
   args:
     chdir: "{{ gvm_libs_build_dir }}"
-  tags: ['gvm_libs', 'build']
+  tags: ['gvm-libs', 'build']
 
-- name: "[gvm_libs] Créer le dossier d’installation temporaire"
+- name: "[gvm-libs] Créer le dossier d’installation temporaire"
   file:
     path: "{{ gvm_libs_install_staging }}"
     state: directory
-  tags: ['gvm_libs', 'install']
+  tags: ['gvm-libs', 'install']
 
-- name: "[gvm_libs] Installer dans le staging"
+- name: "[gvm-libs] Installer dans le staging"
   command: make DESTDIR={{ gvm_libs_install_staging }} install
   args:
     chdir: "{{ gvm_libs_build_dir }}"
-  tags: ['gvm_libs', 'install']
-
-- name: Créer les symlinks vers libgvm_base.so
-  file:
-    src: "/usr/local/lib/libgvm_base.so.22"
-    dest: "/usr/local/lib/libgvm_base.so"
-    state: link
-  when: not gvm_base_check.stat.exists
+  tags: ['gvm-libs', 'install']
 
 - name: Créer les liens symboliques pour les bibliothèques GVM
   ansible.builtin.file:
@@ -98,29 +92,29 @@
     - { src: "/usr/local/lib/libgvm_base.so.22", dest: "/usr/local/lib/libgvm_base.so" }
     - { src: "/usr/local/lib/libgvm_osp.so.22", dest: "/usr/local/lib/libgvm_osp.so" }
     - { src: "/usr/local/lib/libgvm_gmp.so.22", dest: "/usr/local/lib/libgvm_gmp.so" }
-  tags: [gvm_libs, symlinks]
+  tags: ['gvm-libs', 'symlinks']
 
 
 - name: Run ldconfig
   ansible.builtin.command: ldconfig
   become: true
-  tags: gvm_libs
+  tags: gvm-libs
 
 - name: Vérifier que les bibliothèques gvm_base et gvm_util sont installées
   ansible.builtin.stat:
     path: /usr/local/lib/libgvm_base.so
   register: gvm_base_lib
-  tags: gvm_libs
+  tags: gvm-libs
 
 - name: Échouer si la bibliothèque libgvm_base.so est absente
   ansible.builtin.fail:
     msg: "libgvm_base.so est manquant ! Vérifie l'installation de gvm-libs."
   when: not gvm_base_lib.stat.exists
-  tags: gvm_libs
+  tags: gvm-libs
 
-- name: "[gvm_libs] Copier dans le système"
+- name: "[gvm-libs] Copier dans le système"
   copy:
     src: "{{ gvm_libs_install_staging }}/"
     dest: "/"
     remote_src: yes
-  tags: ['gvm_libs', 'install']
+  tags: ['gvm-libs', 'install']

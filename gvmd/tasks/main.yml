@@ -20,7 +20,7 @@
     mode: '0644'
   tags: ['gvmd', 'download']
 
-- name: "[gvmdd] Télécharger la signature"
+- name: "[gvmd] Télécharger la signature"
   get_url:
     url: "{{ gvmd_signature_url }}"
     dest: "{{ source_dir }}/{{ gvmd_tarball }}.asc"
@@ -29,9 +29,9 @@
 
 - name: "[gvmd] Vérifier la signature"
   ansible.builtin.shell: |
-    gpg --verify gvmd-{{ gvmd_version }}.tar.gz.sig gvmd-{{ gvmd_version }}.tar.gz
+    gpg --verify gvmd-{{ gvmd_version }}.tar.gz.asc gvmd-{{ gvmd_version }}.tar.gz
   args:
-    chdir: "{{ download_dir }}"
+    chdir: "{{ source_dir }}"
   register: gvmd_gpg_check
   failed_when: gvmd_gpg_check.rc != 0
   changed_when: false

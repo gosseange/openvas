@@ -1,0 +1,19 @@
+# Dépendances nécessaires
+gsad_required_packages:
+  - libbrotli-dev 
+  - libglib2.0-dev 
+  - libgnutls28-dev 
+  - libmicrohttpd-dev 
+  - libxml2-dev 
+
+gsad_tarball: "gsad-{{ gsad_version }}.tar.gz"
+gsad_tarball_url: "{{ gsad_url }}"
+gsad_signature_url: "{{ gsad_sig_url }}"
+gsad_src_dir: "{{ source_dir }}/gsad-{{ gsad_version }}"
+gsad_build_dir: "{{ build_dir }}/gsad"
+gsad_install_dir: "{{ install_dir }}/gsad"
+gsad_data_dir: "/var"
+gsad_log_dir: "/var/log/gvm"
+vgmd_run_dir: "/run/gsad"
+gsad_run_dir: "/run/gsad"
+openvasd_default_socket: "/run/ospd/ospd-openvas.sock"

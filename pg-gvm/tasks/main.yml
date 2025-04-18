@@ -1,0 +1,85 @@
+---
+
+- name: "[pg-gvm] Installer les dépendances requises"
+  apt:
+    name: "{{ pg_gvm_required_packages }}"
+    state: present
+    update_cache: yes
+  tags: ['pg-gvm', 'deps']
+
+- name: "[pg-gvm] Télécharger l’archive"
+  get_url:
+    url: "{{ pg_gvm_tarball_url }}"
+    dest: "{{ source_dir }}/{{ pg_gvm_tarball }}"
+    mode: '0644'
+  tags: ['pg-gvm', 'download']
+
+- name: "[pg-gvmd] Télécharger la signature"
+  get_url:
+    url: "{{ pg_gvm_signature_url }}"
+    dest: "{{ source_dir }}/{{ pg_gvm_tarball }}.asc"
+    mode: '0644'
+  tags: ['pg-gvm', 'download']
+
+- name: "[pg-gvm] Vérifier la signature"
+  ansible.builtin.shell: |
+    gpg --verify pg-gvm-{{ pg_gvm_version }}.tar.gz.asc pg-gvm-{{ pg_gvm_version }}.tar.gz
+  args:
+    chdir: "{{ source_dir }}"
+  register: pg_gvm_gpg_check
+  failed_when: pg_gvm_gpg_check.rc != 0
+  changed_when: false
+
+- name: "[pg-gvm] Décompresser les sources"
+  unarchive:
+    src: "{{ source_dir }}/{{ pg_gvm_tarball }}"
+    dest: "{{ source_dir }}"
+    remote_src: yes
+    creates: "{{ pg_gvm_src_dir }}"
+  tags: ['pg-gvm', 'extract']
+
+- name: "[pg-gvm] Créer le répertoire de build"
+  file:
+    path: "{{ pg_gvm_build_dir }}"
+    state: directory
+  tags: ['pg-gvm', 'build']
+
+- name: "[pg-gvm] Générer les fichiers avec cmake"
+  command: >
+    cmake -S {{ pg_gvm_src_dir }}
+           -B {{ pg_gvm_build_dir }}
+           -DCMAKE_BUILD_TYPE=Release
+  args:
+    creates: "{{ pg_gvm_build_dir }}/Makefile"
+  tags: ['pg-gvm', 'build']
+
+- name: "[pg-gvm] Compiler pg-gvm"
+  ansible.builtin.command:
+    cmd: cmake --build {{ build_dir }}/pg-gvm -j1
+  args:
+    chdir: "{{ build_dir }}/pg-gvm"
+  environment:
+    LD_LIBRARY_PATH: "/usr/local/lib"
+  tags: ['pg-gvm', 'build']
+
+- name: "[pg-gvm] Mettre à jour les liens dynamiques"
+  ansible.builtin.command: ldconfig
+
+- name: "[pg-gvm] Créer le dossier d’installation temporaire"
+  file:
+    path: "{{ pg_gvm_install_dir }}"
+    state: directory
+  tags: ['pg-gvm', 'install']
+
+- name: "[pg-gvm] Installer dans le staging"
+  command: make DESTDIR={{ pg_gvm_install_dir }} install
+  args:
+    chdir: "{{ pg_gvm_build_dir }}"
+  tags: ['pg-gvm', 'install']
+
+- name: "[pg-gvm] Copier dans le système"
+  copy:
+    src: "{{ pg_gvm_install_dir }}/"
+    dest: "/"
+    remote_src: yes
+  tags: ['pg-gvm', 'install']

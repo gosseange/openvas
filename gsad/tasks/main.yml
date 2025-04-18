@@ -1,0 +1,93 @@
+---
+
+- name: "[gsad] Installer les dépendances requises"
+  apt:
+    name: "{{ gsad_required_packages }}"
+    state: present
+    update_cache: yes
+  tags: ['gsad', 'deps']
+
+- name: "[gsad] Télécharger l’archive"
+  get_url:
+    url: "{{ gsad_tarball_url }}"
+    dest: "{{ source_dir }}/{{ gsad_tarball }}"
+    mode: '0644'
+  tags: ['gsad', 'download']
+
+- name: "[gsad] Télécharger la signature"
+  get_url:
+    url: "{{ gsad_signature_url }}"
+    dest: "{{ source_dir }}/{{ gsad_tarball }}.asc"
+    mode: '0644'
+  tags: ['gsad', 'download']
+
+- name: "[gsad] Vérifier la signature"
+  ansible.builtin.shell: |
+    gpg --verify gsad-{{ gsad_version }}.tar.gz.asc gsad-{{ gsad_version }}.tar.gz
+  args:
+    chdir: "{{ source_dir }}"
+  register: gsad_gpg_check
+  failed_when: gsad_gpg_check.rc != 0
+  changed_when: false
+
+- name: "[gsad] Décompresser les sources"
+  unarchive:
+    src: "{{ source_dir }}/{{ gsad_tarball }}"
+    dest: "{{ source_dir }}"
+    remote_src: yes
+    creates: "{{ gsad_src_dir }}"
+  tags: ['gsad', 'extract']
+
+- name: "[gsad] Créer le répertoire de build"
+  file:
+    path: "{{ gsad_build_dir }}"
+    state: directory
+  tags: ['gsad', 'build']
+
+- name: "[gsad] Générer les fichiers avec cmake"
+  command: >
+    cmake -S {{ gsad_src_dir }}
+           -B {{ gsad_build_dir }}
+           -DCMAKE_INSTALL_PREFIX={{ install_prefix }}
+           -DCMAKE_BUILD_TYPE=Release
+           -DSYSCONFDIR=/etc
+           -DLOCALSTATEDIR=/var
+           -DLOGROTATE_DIR=/etc/logrotate.d
+           -DGVMD_DATA_DIR={{ gsad_data_dir }}
+           -DGVM_LOG_DIR={{ gsad_log_dir }}
+           -DGVM_RUN_DIR={{ vgmd_run_dir }}
+           -DGSAD_RUN_DIR={{ gsad_run_dir  }}
+  args:
+    creates: "{{ gsad_build_dir }}/Makefile"
+  tags: ['gsad', 'build']
+
+- name: "[gsad] Compiler gsad"
+  ansible.builtin.command:
+    cmd: cmake --build {{ build_dir }}/gsad -j1
+  args:
+    chdir: "{{ build_dir }}/gsad"
+  environment:
+    LD_LIBRARY_PATH: "/usr/local/lib"
+  tags: ['gsad', 'build']
+
+- name: "[gsad] Mettre à jour les liens dynamiques"
+  ansible.builtin.command: ldconfig
+
+- name: "[gsad] Créer le dossier d’installation temporaire"
+  file:
+    path: "{{ gsad_install_dir }}"
+    state: directory
+  tags: ['gsad', 'install']
+
+- name: "[gsad] Installer dans le staging"
+  command: make DESTDIR={{ gsad_install_dir }} install
+  args:
+    chdir: "{{ gsad_build_dir }}"
+  tags: ['gsad', 'install']
+
+- name: "[gsad] Copier dans le système"
+  copy:
+    src: "{{ gsad_install_dir }}/"
+    dest: "/"
+    remote_src: yes
+  tags: ['gsad', 'install']

@@ -1,0 +1,12 @@
+# Dépendances nécessaires
+pg_gvm_required_packages:
+  - libglib2.0-dev 
+  - libical-dev 
+  - postgresql-server-dev-all 
+
+pg_gvm_tarball: "pg-gvm-{{ pg_gvm_version }}.tar.gz"
+pg_gvm_tarball_url: "{{ pg_gvm_url }}"
+pg_gvm_signature_url: "{{ pg_gvm_sig_url }}"
+pg_gvm_src_dir: "{{ source_dir }}/pg-gvm-{{ pg_gvm_version }}"
+pg_gvm_build_dir: "{{ build_dir }}/pg-gvm"
+pg_gvm_install_dir: "{{ install_dir }}/pg-gvm"

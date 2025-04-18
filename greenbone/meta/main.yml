@@ -20,13 +20,13 @@ galaxy_info:
     - orchestration
 
 dependencies:
-  - role: greenbone_prereqs
-  - role: gvm_libs
+  - role: greenbone-prereqs
+  - role: gvm-libs
   - role: gvmd
-    #- role: pg_gvm
-    #- role: gsa
-    #- role: gsad
-    #- role: openvas_scanner
+  - role: pg-gvm
+  - role: gsa
+  - role: gsad
+  - role: openvas-smb
     #- role: openvasd_server_config
     #- role: ospd_openvas
     #- role: openvasd

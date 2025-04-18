@@ -1,0 +1,16 @@
+# Dépendances nécessaires
+openvas_smb_required_packages:
+  - gcc-mingw-w64
+  - libgnutls28-dev
+  - libglib2.0-dev
+  - libpopt-dev
+  - libunistring-dev
+  - heimdal-multidev
+  - perl-base
+
+openvas_smb_tarball: "openvas-smb-{{ openvas_smb_version }}.tar.gz"
+openvas_smb_tarball_url: "{{ openvas_smb_url }}"
+openvas_smb_signature_url: "{{ openvas_smb_sig_url }}"
+openvas_smb_src_dir: "{{ source_dir }}/openvas-smb-{{ openvas_smb_version }}"
+openvas_smb_build_dir: "{{ build_dir }}/openvas-smb"
+openvas_smb_install_dir: "{{ install_dir }}/openvas-smb"

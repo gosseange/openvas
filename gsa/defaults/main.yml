@@ -1,0 +1,7 @@
+gsa_tarball: "gsa-dist-{{ gsa_version }}.tar.gz"
+gsa_tarball_url: "{{ gsa_url }}"
+gsa_signature_url: "{{ gsa_sig_url }}"
+gsa_src_dir: "{{ source_dir }}/gsa-{{ gsa_version }}"
+gsa_build_dir: "{{ build_dir }}/gsa"
+gsa_install_dir: "{{ install_dir }}/gsa"
+gsa_web_dir: "{{ install_prefix }}/share/gvm/gsad/web/"

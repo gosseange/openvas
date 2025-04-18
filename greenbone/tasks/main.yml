@@ -1,10 +1,29 @@
 # /etc/ansible/roles/greenbone/tasks/main.yml
 
 - name: "Installation des prérequis Greenbone"
-  include_role:
-    name: greenbone_prereqs
-
-- name: "Installation de gvm_libs"
   import_role:
-    name: gvm_libs
+    name: greenbone-prereqs
 
+- name: "Installation de gvm-libs"
+  import_role:
+    name: gvm-libs
+
+- name: "Installation de gvmd"
+  import_role:
+    name: gvmd
+
+- name: "Installation de pg-gvm"
+  import_role:
+    name: pg-gvm
+
+- name: "Installation de gsa"
+  import_role:
+    name: gsa
+
+- name: "Installation de gsad"
+  import_role:
+    name: gsad
+
+- name: "Installation de openvas-smb"
+  import_role:
+    name: openvas-smb
