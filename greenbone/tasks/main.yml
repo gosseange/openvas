@@ -3,27 +3,53 @@
 - name: "Installation des prérequis Greenbone"
   import_role:
     name: greenbone-prereqs
+  tags: 
+   - greenbone-prereqs
 
 - name: "Installation de gvm-libs"
   import_role:
     name: gvm-libs
+  tags:
+   - gvm-libs
 
 - name: "Installation de gvmd"
   import_role:
     name: gvmd
+  tags:
+   - gvmd
 
 - name: "Installation de pg-gvm"
   import_role:
     name: pg-gvm
+  tags:
+   - pg-gvm
 
 - name: "Installation de gsa"
   import_role:
     name: gsa
+  tags:
+   - gsa
 
 - name: "Installation de gsad"
   import_role:
     name: gsad
+  tags:
+   - gsad
 
 - name: "Installation de openvas-smb"
   import_role:
     name: openvas-smb
+  tags:
+   - openvas-smb
+
+- name: "Installation de openvas-scanner"
+  import_role:
+    name: openvas-scanner
+  tags:
+   - openvas-scanner
+
+- name: "Installation de ospd-openvas"
+  import_role:
+    name: ospd-openvas
+  tags:
+   - ospd-openvas

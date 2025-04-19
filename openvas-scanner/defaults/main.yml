@@ -1,0 +1,30 @@
+# Dépendances nécessaires
+openvas_scanner_required_packages:
+  - bison 
+  - libglib2.0-dev 
+  - libgnutls28-dev 
+  - libgcrypt20-dev 
+  - libpcap-dev 
+  - libgpgme-dev 
+  - libksba-dev 
+  - rsync 
+  - nmap 
+  - libjson-glib-dev 
+  - libcurl4-gnutls-dev 
+  - libbsd-dev 
+  - krb5-multidev
+
+# Dépendances optionnelles
+openvas_scanner_optional_packages:
+  - python3-impacket
+  - libsnmp-dev
+
+openvas_scanner_tarball: "openvas-scanner-{{ openvas_scanner_version }}.tar.gz"
+openvas_scanner_tarball_url: "{{ openvas_scanner_url }}"
+openvas_scanner_signature_url: "{{ openvas_scanner_sig_url }}"
+openvas_scanner_src_dir: "{{ source_dir }}/openvas-scanner-{{ openvas_scanner_version }}"
+openvas_scanner_build_dir: "{{ build_dir }}/openvas-scanner"
+openvas_scanner_install_dir: "{{ install_dir }}/openvas-scanner"
+openvas_scanner_data_dir: "/var"
+dopenvas_run_dir: "/run/ospd"
+openvasd_feed_lock_path: "/var/lib/openvas/feed-update.lock"

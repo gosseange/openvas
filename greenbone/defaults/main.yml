@@ -29,7 +29,7 @@ gsa_url: "https://github.com/greenbone/gsa/releases/download/v{{ gsa_version }}/
 gsad_url: "https://github.com/greenbone/gsad/archive/refs/tags/v{{ gsad_version }}.tar.gz"  
 openvas_smb_url: "https://github.com/greenbone/openvas-smb/archive/refs/tags/v{{ openvas_smb_version }}.tar.gz" 
 openvas_scanner_url: "https://github.com/greenbone/openvas-scanner/archive/refs/tags/v{{ openvas_scanner_version }}.tar.gz"
-ospd_url: "https://github.com/greenbone/ospd-openvas/archive/refs/tags/v{{ ospd_version }}.tar.gz"
+ospd_openvas_url: "https://github.com/greenbone/ospd-openvas/archive/refs/tags/v{{ ospd_openvas_version }}.tar.gz"
 openvasd_url: "https://github.com/greenbone/openvas-scanner/archive/refs/tags/v{{ openvasd_version }}.tar.gz"
 
 # URL des signatures
@@ -40,5 +40,5 @@ gsa_sig_url: "https://github.com/greenbone/gsa/releases/download/v{{ gsa_version
 gsad_sig_url: "https://github.com/greenbone/gsad/releases/download/v{{ gsad_version }}/gsad-{{ gsad_version }}.tar.gz.asc"
 openvas_smb_sig_url: "https://github.com/greenbone/openvas-smb/releases/download/v{{ openvas_smb_version }}/openvas-smb-v{{ openvas_smb_version }}.tar.gz.asc"
 openvas_scanner_sig_url: "https://github.com/greenbone/openvas-scanner/releases/download/v{{ openvas_scanner_version }}/openvas-scanner-v{{ openvas_scanner_version }}.tar.gz.asc"
-ospd_sig_url: "https://github.com/greenbone/ospd-openvas/releases/download/v{{ ospd_version }}/ospd-openvas-v{{ ospd_version }}.tar.gz.asc"
+ospd_openvas_sig_url: "https://github.com/greenbone/ospd-openvas/releases/download/v{{ ospd_openvas_version }}/ospd-openvas-v{{ ospd_openvas_version }}.tar.gz.asc"
 openvasd_sig_url: "https://github.com/greenbone/openvas-scanner/releases/download/v{{ openvasd_version }}/openvas-scanner-v{{ openvasd_version }}.tar.gz.asc"

@@ -1,0 +1,122 @@
+---
+
+- name: "[openvas-scanner] Installer les dépendances requises"
+  apt:
+    name: "{{ openvas_scanner_required_packages }}"
+    state: present
+    update_cache: yes
+  tags: ['openvas-scanner', 'deps']
+
+- name: "[openvas-scanner] Installer les dépendances optionnelles"
+  apt:
+    name: "{{ openvas_scanner_optional_packages }}"
+    state: present
+  tags: ['openvas-scanner', 'deps']
+
+- name: "[openvas-scanner] Télécharger l’archive"
+  get_url:
+    url: "{{ openvas_scanner_tarball_url }}"
+    dest: "{{ source_dir }}/{{ openvas_scanner_tarball }}"
+    mode: '0644'
+  tags: ['openvas-scanner', 'download']
+
+- name: "[openvas-scanner] Télécharger la signature"
+  get_url:
+    url: "{{ openvas_scanner_signature_url }}"
+    dest: "{{ source_dir }}/{{ openvas_scanner_tarball }}.asc"
+    mode: '0644'
+  tags: ['openvas-scanner', 'download']
+
+- name: "[openvas-scanner] Vérifier la signature"
+  ansible.builtin.shell: |
+    gpg --verify openvas-scanner-{{ openvas_scanner_version }}.tar.gz.asc openvas-scanner-{{ openvas_scanner_version }}.tar.gz
+  args:
+    chdir: "{{ source_dir }}"
+  register: openvas_scanner_gpg_check
+  failed_when: openvas_scanner_gpg_check.rc != 0
+  changed_when: false
+
+- name: "[openvas-scanner] Décompresser les sources"
+  unarchive:
+    src: "{{ source_dir }}/{{ openvas_scanner_tarball }}"
+    dest: "{{ source_dir }}"
+    remote_src: yes
+    creates: "{{ openvas_scanner_src_dir }}"
+  tags: ['openvas-scanner', 'extract']
+
+- name: "[openvas-scanner] Créer le répertoire de build"
+  file:
+    path: "{{ openvas_scanner_build_dir }}"
+    state: directory
+  tags: ['openvas-scanner', 'build']
+
+- name: "[openvas-scanner] Générer les fichiers avec cmake"
+  command: >
+    cmake -S {{ openvas_scanner_src_dir }}
+           -B {{ openvas_scanner_build_dir }}
+           -DCMAKE_INSTALL_PREFIX={{ install_prefix }}
+           -DCMAKE_BUILD_TYPE=Release
+           -DSYSCONFDIR=/etc
+           -DLOCALSTATEDIR=/var
+           -DOPENVAS_RUN_DIR={{ dopenvas_run_dir }}
+           -DOPENVAS_FEED_LOCK_PATH={{ openvasd_feed_lock_path}}
+  args:
+    creates: "{{ openvas_scanner_build_dir }}/Makefile"
+  tags: ['openvas-scanner', 'build']
+
+- name: "[openvas-scanner] Compiler gvmd"
+  ansible.builtin.command:
+    cmd: cmake --build {{ build_dir }}/gvmd -j1
+  args:
+    chdir: "{{ build_dir }}/gvmd"
+  environment:
+    LD_LIBRARY_PATH: "/usr/local/lib"
+  tags: ['openvas-scanner', 'build']
+
+- name: "[gvm] Mettre à jour les liens dynamiques"
+  ansible.builtin.command: ldconfig
+
+- name: "[openvas-scanner] Créer le dossier d’installation temporaire"
+  file:
+    path: "{{ openvas_scanner_install_dir }}"
+    state: directory
+  tags: ['openvas-scanner', 'install']
+
+- name: "[openvas-scanner] Installer dans le staging"
+  command: make DESTDIR={{ openvas_scanner_install_dir }} install
+  args:
+    chdir: "{{ openvas_scanner_build_dir }}"
+  tags: ['openvas-scanner', 'install']
+
+- name: "[openvas-scanner] Copier dans le système"
+  copy:
+    src: "{{ openvas_scanner_install_dir }}/"
+    dest: "/"
+    remote_src: yes
+  tags: ['openvas-scanner', 'install']
+
+- name: "Configurer openvas.conf avec les paramètres requis"
+  block:
+    - name: "S'assurer que le fichier /etc/openvas/openvas.conf existe"
+      file:
+        path: /etc/openvas/openvas.conf
+        state: touch
+        mode: '0644'
+
+    - name: "Configurer table_driven_lsc = yes"
+      lineinfile:
+        path: /etc/openvas/openvas.conf
+        regexp: '^table_driven_lsc\s*='
+        line: 'table_driven_lsc = yes'
+        create: yes
+        state: present
+
+    - name: "Configurer openvasd_server = http://127.0.0.1:3000"
+      lineinfile:
+        path: /etc/openvas/openvas.conf
+        regexp: '^openvasd_server\s*='
+        line: 'openvasd_server = http://127.0.0.1:3000'
+        create: yes
+        state: present
+  tags: [openvas-scanner,'openvasconfig']
+

@@ -69,6 +69,18 @@
     chdir: "{{ gvm_libs_build_dir }}"
   tags: ['gvm-libs', 'build']
 
+- name: "[gvm-libs] Ajouter /usr/local/lib au ld.so.conf"
+  copy:
+    dest: /etc/ld.so.conf.d/gvm.conf
+    content: "/usr/local/lib\n"
+  become: yes
+  tags: gvm-libs
+
+- name: "[gvm-libs] Mettre à jour le cache des bibliothèques"
+  command: ldconfig
+  become: yes
+  tags: gvm-libs
+
 - name: "[gvm-libs] Créer le dossier d’installation temporaire"
   file:
     path: "{{ gvm_libs_install_staging }}"
@@ -92,24 +104,14 @@
     - { src: "/usr/local/lib/libgvm_base.so.22", dest: "/usr/local/lib/libgvm_base.so" }
     - { src: "/usr/local/lib/libgvm_osp.so.22", dest: "/usr/local/lib/libgvm_osp.so" }
     - { src: "/usr/local/lib/libgvm_gmp.so.22", dest: "/usr/local/lib/libgvm_gmp.so" }
+    - { src: "/usr/local/lib/libgvm_boreas.so.22.18.0", dest: "/usr/local/lib/libgvm_boreas.so" }
+    - { src: "/usr/local/lib/libopenvas_wmiclient.so.22.5.3", dest: "/usr/local/lib/libopenvas_wmiclient.so" }
   tags: ['gvm-libs', 'symlinks']
 
 
 - name: Run ldconfig
   ansible.builtin.command: ldconfig
   become: true
-  tags: gvm-libs
-
-- name: Vérifier que les bibliothèques gvm_base et gvm_util sont installées
-  ansible.builtin.stat:
-    path: /usr/local/lib/libgvm_base.so
-  register: gvm_base_lib
-  tags: gvm-libs
-
-- name: Échouer si la bibliothèque libgvm_base.so est absente
-  ansible.builtin.fail:
-    msg: "libgvm_base.so est manquant ! Vérifie l'installation de gvm-libs."
-  when: not gvm_base_lib.stat.exists
   tags: gvm-libs
 
 - name: "[gvm-libs] Copier dans le système"
