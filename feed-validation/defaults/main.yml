@@ -1,0 +1,3 @@
+greenbone_gpg_temp_home: "/tmp/openvas-gnupg"
+greenbone_gpg_key_file: "/tmp/GBCommunitySigningKey.asc"
+openvas_gnupg_home: "/etc/openvas/gnupg"

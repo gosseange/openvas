@@ -1,0 +1,7 @@
+# Dépendances nécessaires
+greenbone_feed_sync_required_packages:
+  - python3 
+  - python3-pip 
+
+greenbone_feed_sync_install_dir: "{{ install_dir }}/greenbone-feed-sync"
+

@@ -53,3 +53,45 @@
     name: ospd-openvas
   tags:
    - ospd-openvas
+
+- name: "Installation de openvasd"
+  import_role:
+    name: openvasd
+  tags:
+   - openvasd
+
+- name: "Installation de greenbone-feed-sync"
+  import_role:
+    name: greenbone-feed-sync
+  tags:
+   - greenbone-feed-sync
+
+- name: "Installation de gvm-tools"
+  import_role:
+    name: gvm-tools
+  tags:
+   - gvm-tools
+
+- name: "Installation et Config de redis"
+  import_role:
+    name: redis
+  tags:
+   - redis
+
+- name: "Validation des feeds"
+  import_role:
+    name: feed-validation
+  tags:
+   - feed-validation
+
+- name: "Configurer PostgreSQL"
+  import_role:
+    name: postgresql-setup
+  tags: 
+   - postgresql-setup
+
+- name: "Configurer Systemd-Setup"
+  import_role:
+    name: systemd-setup
+  tags:
+   - systemd-setup

@@ -1,0 +1,89 @@
+---
+
+- name: Installer le serveur PostgreSQL
+  ansible.builtin.apt:
+    name: postgresql
+    state: present
+    update_cache: yes
+  become: true
+  tags: postgresql_install
+
+- name: S'assurer que le service PostgreSQL est démarré et activé
+  ansible.builtin.service:
+    name: postgresql
+    state: started
+    enabled: yes
+  become: true
+  tags: postgresql_service
+
+    #- name: Créer l'utilisateur PostgreSQL 'gvm'
+    #become: true
+    #become_user: postgres
+    #ansible.builtin.command: createuser -DRS gvm
+    #args:
+    #creates: "/var/lib/postgresql/.postgresql_setup_gvm_user_created"
+    #register: createuser_result
+    #failed_when: "'already exists' not in createuser_result.stderr and createuser_result.rc != 0"
+    #changed_when: "'already exists' not in createuser_result.stderr"
+
+- name: Créer l'utilisateur PostgreSQL 'gvm' s'il n'existe pas
+  ansible.builtin.shell: |
+    sudo -u postgres psql -tAc "SELECT 1 FROM pg_roles WHERE rolname='gvm'" | grep -q 1 || sudo -u postgres createuser -DRS gvm
+  become: true
+  args:
+    executable: /bin/bash
+  register: createuser_result
+  changed_when: createuser_result.rc == 0
+  tags: ['postgres', 'create-user']
+
+    #- name: Créer la base de données 'gvmd' appartenant à 'gvm'
+    #ansible.builtin.shell: |
+    #sudo -u postgres createdb -O gvm gvmd
+    #become: true
+    #args:
+    #executable: /bin/bash
+    #tags: ['postgres', 'create-db']
+
+- name: "[postgresql] Vérifier si la base de données 'gvmd' existe"
+  shell: sudo -u postgres psql -tAc "SELECT 1 FROM pg_database WHERE datname='gvmd';"
+  register: gvmd_db_exists
+  changed_when: false
+
+- name: "[postgresql] Créer la base de données 'gvmd' appartenant à 'gvm' si elle n'existe pas"
+  command: createdb -O gvm gvmd
+  become: true
+  become_user: postgres
+  when: gvmd_db_exists.stdout.strip() != "1"
+
+
+- name: "[postgresql] Créer le rôle 'dba' et le lier à 'gvm'"
+  shell: |
+    sudo -u postgres psql -c "DO \$\$
+    BEGIN
+      IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'dba') THEN
+        CREATE ROLE dba SUPERUSER;
+      END IF;
+      GRANT dba TO gvm;
+    END
+    \$\$;"
+  changed_when: false
+
+- name: Vérifier si l'utilisateur gvmd 'admin' existe déjà
+  become: true
+  ansible.builtin.shell: "/usr/local/sbin/gvmd --get-users --verbose | grep -w admin"
+  register: check_admin_user
+  changed_when: false
+  failed_when: false
+
+- name: Créer l'utilisateur gvmd 'admin' s'il n'existe pas
+  become: true
+  ansible.builtin.command: /usr/local/sbin/gvmd --create-user=admin
+  when: check_admin_user.rc != 0
+
+- name: Définir l'utilisateur 'admin' comme Feed Import Owner
+  become: true
+  ansible.builtin.shell: >
+    /usr/local/sbin/gvmd --modify-setting 78eceaec-3385-11ea-b237-28d24461215b
+    --value "$(/usr/local/sbin/gvmd --get-users --verbose | grep admin | awk '{print $2}')"
+  args:
+    executable: /bin/bash

@@ -1,0 +1,96 @@
+---
+
+- name: "[redis] Installer les dépendances requises"
+  apt:
+    name: "{{ redis_required_packages }}"
+    state: present
+    update_cache: yes
+  tags: ['redis', 'deps']
+
+- name: "[redis]Copier redis-openvas.conf dans /etc/redis"
+  copy:
+    src: "{{ openvas_scanner_src_dir }}/config/redis-openvas.conf"
+    dest: /etc/redis/redis-openvas.conf
+    owner: root
+    group: root
+    mode: '0644'
+    remote_src: true
+  tags: ['redis', 'copy-redis-conf']
+  
+- name: "[redis]Changer le propriétaire du fichier redis-openvas.conf"
+  ansible.builtin.file:
+    path: /etc/redis/redis-openvas.conf
+    owner: redis
+    group: redis
+    mode: '0644'
+  tags: ['redis', 'change-file-owner']
+
+
+- name: "[redis]Ajouter la ligne db_address à la fin du fichier"
+  ansible.builtin.shell: "echo 'db_address = /run/redis-openvas/redis.sock' >> /etc/openvas/openvas.conf"
+  args:
+    creates: /etc/openvas/openvas.conf
+  tags: ['redis', 'append-db_address-line']
+
+
+- name: "[redis]Démarrer le service redis-server@openvas"
+  ansible.builtin.systemd:
+    name: redis-server@openvas.service
+    state: started
+    enabled: yes
+  tags: ['redis', 'restart-service']
+
+- name: "[gvmd] Configuration des permissions nécessaires pour GVM"
+  block:
+
+    - name: "[gvmd] Ajouter l'utilisateur gvm au groupe redis"
+      ansible.builtin.user:
+        name: gvm
+        groups: redis
+        append: yes
+      tags: ['gvmd', 'redis', 'permissions']
+
+    - name: "[gvmd] Créer les répertoires nécessaires"
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        owner: gvm
+        group: gvm
+        mode: '0770'
+      loop:
+        - /var/lib/notus
+        - /run/gvmd
+      tags: ['gvmd', 'permissions']
+
+    - name: "[gvmd] Changer le propriétaire des répertoires existants"
+      ansible.builtin.file:
+        path: "{{ item }}"
+        owner: gvm
+        group: gvm
+        recurse: yes
+      loop:
+        - /var/lib/gvm
+        - /var/lib/openvas
+        - /var/lib/notus
+        - /var/log/gvm
+        - /run/gvmd
+      tags: ['gvmd', 'permissions']
+
+    - name: "[gvmd] Appliquer les permissions g+srw aux répertoires critiques"
+      ansible.builtin.file:
+        path: "{{ item }}"
+        mode: '02770'
+        recurse: yes
+      loop:
+        - /var/lib/gvm
+        - /var/lib/openvas
+        - /var/log/gvm
+      tags: ['gvmd', 'permissions']
+
+    - name: "[gvmd] Ajuster les permissions sur le binaire gvmd"
+      ansible.builtin.file:
+        path: /usr/local/sbin/gvmd
+        owner: gvm
+        group: gvm
+        mode: '6750'
+      tags: ['gvmd', 'permissions', 'gvmd-binary']

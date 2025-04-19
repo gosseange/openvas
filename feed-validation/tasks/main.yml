@@ -1,0 +1,50 @@
+# roles/greenbone_feed_validation/tasks/main.yml
+
+- name: "[feed] Créer le dossier temporaire GNUPG"
+  file:
+    path: "{{ greenbone_gpg_temp_home }}"
+    state: directory
+    mode: '0700'
+
+- name: "[feed] Télécharger la clé publique de signature"
+  get_url:
+    url: "{{ greenbone_signing_key_url }}"
+    dest: "{{ greenbone_gpg_key_file }}"
+    mode: '0644'
+
+- name: "[feed] Importer la clé dans le trousseau temporaire"
+  command: >
+    gpg --homedir {{ greenbone_gpg_temp_home }} --import {{ greenbone_gpg_key_file }}
+  args:
+    creates: "{{ greenbone_gpg_temp_home }}/pubring.kbx"
+
+- name: "[feed] Importer la ligne de confiance"
+  shell: |
+    echo "{{ greenbone_gpg_trustline }}" | gpg --homedir {{ greenbone_gpg_temp_home }} --import-ownertrust
+  args:
+    executable: /bin/bash
+
+- name: "[feed] Créer le dossier de clé GPG définitif"
+  file:
+    path: "{{ openvas_gnupg_home }}"
+    state: directory
+    owner: gvm
+    group: gvm
+    mode: '0700'
+
+- name: "[feed] Copier les clés dans le dossier définitif"
+  copy:
+    src: "{{ greenbone_gpg_temp_home }}/"
+    dest: "{{ openvas_gnupg_home }}/"
+    remote_src: yes
+    owner: gvm
+    group: gvm
+    mode: '0600'
+
+- name: "[feed] Configurer sudo pour permettre à gvm d'exécuter openvas sans mot de passe"
+  copy:
+    content: "%gvm ALL = NOPASSWD: /usr/local/sbin/openvas"
+    dest: /etc/sudoers.d/gvm
+    mode: '0440'
+    owner: root
+    group: root

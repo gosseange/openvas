@@ -1,2 +1,11 @@
----
-# defaults file for openvasd
+# Dépendances nécessaires
+openvasd_required_packages:
+  - pkg-config
+  - cargo 
+  - libssl-dev
+
+openvasd_tarball: "openvas-scanner-{{ openvasd_version }}.tar.gz"
+openvasd_src_dir: "{{ source_dir }}/openvasd"
+openvasd_build_dir: "{{ build_dir }}/openvasd"
+openvasd_install_dir: "{{ install_dir }}/openvasd"
+

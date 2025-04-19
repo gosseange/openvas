@@ -1,2 +1,69 @@
 ---
-# tasks file for openvasd
+
+- name: "[openvasd] Installer les dépendances requises"
+  apt:
+    name: "{{ openvasd_required_packages }}"
+    state: present
+    update_cache: yes
+
+- name: "[openvasd] Installer Rust et Cargo via rustup"
+  ansible.builtin.include_tasks: install_rust.yml
+
+- name: "[openvasd] Créer le répertoire de téléchargement"
+  ansible.builtin.file:
+    path: "{{ openvasd_src_dir }}"
+    state: directory
+    mode: '0755'
+
+- name: "[openvasd] Télécharger les sources"
+  ansible.builtin.get_url:
+    url: "{{ openvasd_url }}"
+    dest: "{{ openvasd_src_dir }}/{{ openvas_scanner_tarball }}"
+    mode: '0644'
+
+- name: "[openvasd] Créer le répertoire d'installation"
+  ansible.builtin.file:
+    path: "{{ openvasd_install_dir }}"
+    state: directory
+    mode: '0755'
+
+- name: "[openvasd] Extraire les sources"
+  ansible.builtin.unarchive:
+    src: "{{ openvasd_src_dir }}/{{ openvas_scanner_tarball }}"
+    dest: "{{ openvasd_install_dir }}"
+    remote_src: yes
+    extra_opts: [ --strip-components=1 ]
+
+- name: "[openvasd] Créer le répertoire {{ openvasd_install_dir }}/usr/local/bin"
+  ansible.builtin.file:
+    path: "{{ openvasd_install_dir }}/usr/local/bin"
+    state: directory
+    mode: '0755'
+
+- name: "[openvasd] Compiler openvasd avec cargo en mode release dans {{openvasd_install_dir/rust/src/openvasd}}"
+  ansible.builtin.command: cargo build --release
+  args:
+    chdir: "{{ openvasd_install_dir }}/rust/src/openvasd"
+  environment:
+    PATH: "{{ ansible_env.HOME }}/.cargo/bin:{{ ansible_env.PATH }}"
+    CARGO_TERM_COLOR: always
+  register: cargo_build_result
+  changed_when: "'Finished release' in cargo_build_result.stdout"
+  failed_when: cargo_build_result.rc != 0
+
+
+- name: "[openvasd] Compiler openvasd avec cargo en mode release dans {{openvasd_install_dir/rust/src/scannerctl}}"
+  ansible.builtin.command: cargo build --release
+  args:
+    chdir: "{{ openvasd_install_dir }}/rust/src/scannerctl"
+  environment:
+    PATH: "{{ ansible_env.HOME }}/.cargo/bin:{{ ansible_env.PATH }}"
+    CARGO_TERM_COLOR: always
+  register: cargo_build_result
+  changed_when: "'Finished release' in cargo_build_result.stdout"
+  failed_when: cargo_build_result.rc != 0
+
+- name: "[openvasd] Copier les fichiers avec rsync vers /"
+  ansible.builtin.command: >
+    rsync -a {{ openvasd_install_dir }}/ /
+  become: true

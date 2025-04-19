@@ -7,8 +7,7 @@ download_dir: /tmp/
 # User and group
 gvm_user: gvm
 gvm_group: gvm
-gvm_shell: /usr/sbin/nologin
-gvm_additional_groups: sudo
+gvm_shell: /bin/bash
 
 # Versions des composants
 gvm_libs_version: 22.18.0
@@ -20,6 +19,7 @@ openvas_smb_version: 22.5.3
 openvas_scanner_version: 23.15.3
 ospd_openvas_version: 22.7.1
 openvasd_version: 23.15.3
+
 
 # URLs de téléchargement
 gvm_libs_url: "https://github.com/greenbone/gvm-libs/archive/refs/tags/v{{ gvm_libs_version }}.tar.gz"

@@ -1,0 +1,24 @@
+---
+
+- name: "[gvm-tools] Créer le répertoire d'installation"
+  ansible.builtin.file:
+    path: "{{ gvm_tools_install_dir }}"
+    state: directory
+    mode: '0755'
+  tags: 'create-install-dir'
+
+- name: "[gvm-tools] Installer gvm-tools for all users"
+  ansible.builtin.command:
+    cmd: python3 -m pip install --root={{ gvm_tools_install_dir }} --no-warn-script-location gvm-tools
+  args:
+    chdir: "{{ gvm_tools_install_dir }}"
+  register: gvm_tools_pip_install
+  changed_when: "'Successfully installed' in gvm_tools_pip_install.stdout or gvm_tools_pip_install.rc == 0"
+  failed_when: gvm_tools_pip_install.rc != 0
+  tags: 'install-gvm-tools'
+
+- name: "[gvm-tools] Copier les fichiers avec rsync vers /"
+  ansible.builtin.command: >
+    rsync -a {{ gvm_tools_install_dir }}/ /
+  become: true
+  tags: 'copy'

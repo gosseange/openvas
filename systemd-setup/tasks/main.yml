@@ -1,0 +1,43 @@
+- name: Créer les fichiers de service systemd pour Greenbone
+  ansible.builtin.copy:
+    dest: "/etc/systemd/system/{{ item.filename }}"
+    content: "{{ item.content }}"
+    owner: root
+    group: root
+    mode: '0644'
+  loop: "{{ services }}"
+  tags: greenbone_services
+
+- name: Recharger systemd pour prendre en compte les nouveaux fichiers
+  ansible.builtin.systemd:
+    daemon_reload: true
+  tags: greenbone_services
+
+- name: Synchroniser les feeds Greenbone
+  ansible.builtin.command: /usr/local/bin/greenbone-feed-sync
+  register: feed_sync
+  changed_when: "'rsync' in feed_sync.stdout or 'Updated' in feed_sync.stdout"
+  tags: greenbone_services
+
+- name: Démarrer les services Greenbone
+  ansible.builtin.systemd:
+    name: "{{ item.name }}"
+    state: started
+    enabled: true
+  loop: "{{ services }}"
+  tags: greenbone_services
+
+- name: Vérifier l'état des services
+  ansible.builtin.systemd:
+    name: "{{ item.name }}"
+  loop: "{{ services }}"
+  register: service_status
+  tags: greenbone_services
+
+- name: Afficher l'état des services
+  ansible.builtin.debug:
+    msg: "{{ item.status.ActiveState }} - {{ item.name }}"
+  loop: "{{ service_status.results }}"
+  loop_control:
+    label: "{{ item.item.name }}"
+  tags: greenbone_services
